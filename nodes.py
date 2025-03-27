@@ -130,7 +130,7 @@ class AudioLogitsProcessor(logits_process.LogitsProcessor):
     def __call__(self, input_ids, score):
         offset = (input_ids.size(-1) - self.start_index) % 7
         new_score = torch.zeros_like(score)
-        if offset == 0:
+        if offset == 0 and input_ids.size(-1) > self.start_index:
             new_score[:,TOKENS['end_of_speech']] = score[:,TOKENS['end_of_speech']]
         code_base = tokeniser_length + 10 + 4096 * offset
         new_score[:,code_base:code_base+4096] = score[:,code_base:code_base+4096]
@@ -163,13 +163,14 @@ class OrpheusSample:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {"model": ("ORPH_MODEL",),
-                             "prompt": ("ORPH_TOKENS",)},}
+                             "prompt": ("ORPH_TOKENS",),
+                             "add_start_token": ("BOOLEAN", {"default": True})},}
     FUNCTION = "sample"
     RETURN_TYPES = ("ORPH_TOKENS","ORPH_TOKENS")
     CATEOGRY = "Orpheus"
     OUTPUT_NODE = True
-    def sample(self, model, prompt):
-        if prompt[-2:] != [TOKENS['start_of_ai'], TOKENS['start_of_speech']]:
+    def sample(self, model, prompt, add_start_token):
+        if add_start_token:
             prompt += [TOKENS['start_of_ai'], TOKENS['start_of_speech']]
         try:
             model.to(execution_device)
@@ -177,10 +178,9 @@ class OrpheusSample:
             attention_mask = torch.ones(input_ids.shape, device=model.device)
             start_index = input_ids.size(-1)
             lpl = LogitsProcessorList([AudioLogitsProcessor(start_index)])
-            #prompt2 = tok.tokenizer('this is a test', return_tensors='pt')
             gen_ids = model.generate(logits_processor=lpl,
                                      eos_token_id=TOKENS['end_of_speech'],
-                                     max_new_tokens=7*112,
+                                     max_new_tokens=7*512,
                                      do_sample=True,
                                      temperature=0.6,
                                      top_p=0.95,
@@ -191,7 +191,7 @@ class OrpheusSample:
         finally:
             model.to('cpu')
         gen_ids = gen_ids.squeeze(0)
-        return gen_ids[...,start_index:-1].tolist(), gen_ids.tolist()
+        return gen_ids[...,start_index:-1].tolist(), gen_ids.tolist() + [TOKENS['end_of_ai']]
 
 class OrpheusPrompt:
     @classmethod
