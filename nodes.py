@@ -2,13 +2,17 @@ import json
 import os.path
 
 import torch
+import torchaudio
 import safetensors.torch
 from transformers import LlamaForCausalLM, PretrainedConfig
+from transformers.generation import logits_process, LogitsProcessorList
 
 from comfy.utils import load_torch_file
 from comfy.text_encoders.hunyuan_video import LLAMA3Tokenizer
 import folder_paths
+from comfy.model_management import get_torch_device
 
+execution_device = get_torch_device()
 tokeniser_length = 128256
 TOKENS = {'start_of_text':  128000, 'end_of_text': 128009, 'start_of_speech':
           tokeniser_length + 1, 'end_of_speech': tokeniser_length + 2,
@@ -34,14 +38,14 @@ class SnacVAE:
     def decode(self, codes):
         with torch.inference_mode():
             try:
-                self.model.to('cuda')
+                self.model.to(execution_device)
                 return self.model.decode(codes)
             finally:
                 self.model.to('cpu')
     def encode(self, atensor):
         with torch.inference_mode():
             try:
-                self.model.to('cuda')
+                self.model.to(execution_device)
                 return self.model.encode(atensor)
             finally:
                 self.model.to('cpu')
@@ -62,31 +66,39 @@ class OrpheusDecode:
         t -= torch.arange(7, device=t.device) * 4096
         if t.min() < 0 or t.max() > 4096:
             raise ValueError("Invalid codes. Should be impossible. Open an issue.")
-        codes = [t[:,0]        .to('cuda').reshape((1,-1)),
-                 t[:,[1,4]]    .to('cuda').reshape((1,-1)),
-                 t[:,[2,3,5,6]].to('cuda').reshape((1,-1))]
+        codes = [t[:,0]        .to(execution_device).reshape((1,-1)),
+                 t[:,[1,4]]    .to(execution_device).reshape((1,-1)),
+                 t[:,[2,3,5,6]].to(execution_device).reshape((1,-1))]
         return {"waveform": vae.decode(codes), "sample_rate": 24000},
 class OrpheusEncode:
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": {"vae": ("VAE",), "audio": ("AUDIO",)},}
-    FUNCTION = "loadvae"
-    RETURN_TYPES = ("VAE",)
+        return {"required": {"vae": ("VAE",), "audio": ("AUDIO",),
+                             "formatting": (["BOTH", "PRE", "POST", "NONE"],)},}
+    FUNCTION = "encode"
+    RETURN_TYPES = ("ORPH_TOKENS",)
     CATEOGRY = "Orpheus"
-    def encode(self, vae, audio):
-        codes = super().encode(audio)
+    def encode(self, vae, audio, formatting):
+        w = audio['waveform']
+        rate = audio['sample_rate']
+        if rate != 24000:
+            w = torchaudio.functional.resample(w, rate, 24000)
+        #TODO: Process Channels?
+        w = w.to(execution_device)
+        codes = vae.encode(w)
         codes = [codes[0].reshape((-1,1)),
                  codes[1].reshape((-1,2)),
                  codes[2].reshape((-1,4))]
         combined = torch.cat([codes[0][:,[0]],codes[1][:,[0]],codes[2][:,[0,1]],
                              codes[1][:,[1]],codes[2][:,[2,3]]],dim=1)
-        combined += 10
+        combined += 10 + tokeniser_length
         combined += torch.arange(7, device=combined.device) * 4096
-        return combined
-        code_string = ""
-        for token in combined.flatten():
-            code_string += f"<custom_token_{int(token)}>"
-        return code_string,
+        combined = combined.flatten().tolist()
+        if formatting == "PRE" or formatting == "BOTH":
+            combined = [TOKENS['start_of_ai'], TOKENS['start_of_speech']] + combined
+        if formatting == "POST" or formatting == "BOTH":
+            combined += [TOKENS['end_of_speech'], TOKENS['end_of_ai']]
+        return combined,
 
 class LoadSnacVAE:
     @classmethod
@@ -112,7 +124,6 @@ def convetToSection(section):
         if section['sr'] != 24000:
             w = torchaudio.functional.resample(w, section['sr'], 24000)
 
-from transformers.generation import logits_process, LogitsProcessorList
 class AudioLogitsProcessor(logits_process.LogitsProcessor):
     def __init__(self, start_index):
         self.start_index = start_index
@@ -158,13 +169,11 @@ class OrpheusSample:
     CATEOGRY = "Orpheus"
     OUTPUT_NODE = True
     def sample(self, model, prompt):
-        #prompt is already tokenized
-        #See return_dict_in_generate
         if prompt[-2:] != [TOKENS['start_of_ai'], TOKENS['start_of_speech']]:
             prompt += [TOKENS['start_of_ai'], TOKENS['start_of_speech']]
         try:
-            model.to('cuda')
-            input_ids = torch.tensor(prompt).unsqueeze(0).cuda()
+            model.to(execution_device)
+            input_ids = torch.tensor(prompt).unsqueeze(0).to(execution_device)
             attention_mask = torch.ones(input_ids.shape, device=model.device)
             start_index = input_ids.size(-1)
             lpl = LogitsProcessorList([AudioLogitsProcessor(start_index)])
@@ -192,12 +201,10 @@ class OrpheusPrompt:
     RETURN_TYPES = ("ORPH_TOKENS",)
     CATEOGRY = "Orpheus"
     def encodeprompt(self, text):
-        #print(tok.tokenizer(text, return_tensors='pt'))
         #start_of_text is included during tokenization automatically
         tokens = [TOKENS['start_of_human']] \
                 + tok.tokenizer(text).input_ids \
                 + [TOKENS['end_of_text'], TOKENS['end_of_human']]
-        #tokens = convertToSection(text)
         return tokens,
 
 
@@ -210,14 +217,23 @@ class CombinePrompt:
     RETURN_TYPES = ("ORPH_TOKENS",)
 
     #NOTE: most implementation is frontend
-    def concat(self, *args):
-        return sum(args),
+    def concat(self, **kwargs):
+        ind = 1
+        output = []
+        while True:
+            if ('prompt_%d' % ind) not in kwargs:
+                break
+            output += kwargs['prompt_%d' % ind]
+            ind += 1
+        return output,
 
 NODE_CLASS_MAPPINGS = {
   "ORPH_Sample": OrpheusSample,
   "ORPH_Load": LoadOrpheus,
   "ORPH_Prompt": OrpheusPrompt,
   "ORPH_Decode": OrpheusDecode,
+  "ORPH_Encode": OrpheusEncode,
   "ORPH_SnacVae": LoadSnacVAE,
+  "ORPH_Combine": CombinePrompt,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {}
