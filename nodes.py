@@ -83,7 +83,8 @@ class OrpheusEncode:
         rate = audio['sample_rate']
         if rate != 24000:
             w = torchaudio.functional.resample(w, rate, 24000)
-        #TODO: Process Channels?
+        #TODO: Better channel processing
+        w = w[:,:1]
         w = w.to(execution_device)
         codes = vae.encode(w)
         codes = [codes[0].reshape((-1,1)),
@@ -154,7 +155,7 @@ class LoadOrpheus:
         #model_path = folder_paths.get_full_path_or_raise('vae', model)
         model_path = model
         #TODO: Save conf in safetensors?
-        conf = os.path.join(os.path.split(__file__)[0], 'config.json')
+        conf = os.path.join(os.path.split(__file__)[0], 'orpheus-config.json')
         model = LlamaForCausalLM(PretrainedConfig.from_json_file(conf))
         safetensors.torch.load_model(model, model_path)
         return model,
