@@ -137,11 +137,6 @@ class AudioLogitsProcessor(logits_process.LogitsProcessor):
         new_score[:,code_base:code_base+4096] = score[:,code_base:code_base+4096]
         return new_score
 
-
-
-#TODO: properly load this
-tok = LLAMA3Tokenizer()
-
 class LoadOrpheus:
     @classmethod
     def INPUT_TYPES(s):
@@ -156,6 +151,8 @@ class LoadOrpheus:
         conf = os.path.join(os.path.split(__file__)[0], 'orpheus-config.json')
         config = PretrainedConfig.from_json_file(conf)
         sd = safetensors.torch.load_file(model)
+        #TODO: use this to detect pt/ft and add further tweaks?
+        config.vocab_size = sd['lm_head.weight'].size(0)
         model = LlamaForCausalLM.from_pretrained(None, config=config, state_dict=sd)
         return model,
 
@@ -206,14 +203,21 @@ class OrpheusSample:
 class OrpheusPrompt:
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": {"text": ("STRING", {"multiline": True})},}
+        return {"required": {"text": ("STRING", {"multiline": True})},
+                "optional": {"speaker": (['None','tara','leah','jess','leo','dan','mia','zac','zoe'],)}}
     FUNCTION = "encodeprompt"
     RETURN_TYPES = ("ORPH_TOKENS",)
     CATEOGRY = "Orpheus"
-    def encodeprompt(self, text):
+    def __init__(self):
+        #TODO: properly load this
+        tok = LLAMA3Tokenizer()
+        self.tokenizer = tok.tokenizer
+    def encodeprompt(self, text, speaker='None'):
+        if speaker != 'None':
+            text = speaker + ": " + text
         #start_of_text is included during tokenization automatically
         tokens = [TOKENS['start_of_human']] \
-                + tok.tokenizer(text).input_ids \
+                + self.tokenizer(text).input_ids \
                 + [TOKENS['end_of_text'], TOKENS['end_of_human']]
         return tokens,
 
