@@ -63,6 +63,15 @@ class OrpheusDecode:
     RETURN_TYPES = "AUDIO",
     CATEOGRY = "Orpheus"
     def decode(self, tokens, vae):
+        #trim any section tokens from start or end
+        start_index = 0
+        while tokens[start_index] < tokeniser_length + 10:
+            start_index += 1
+        end_index = 0
+        while tokens[end_index - 1] < tokeniser_length + 10:
+            end_index -= 1
+        if start_index != 0 or end_index != 0:
+            tokens = tokens[start_index:end_index]
         #assert len(tokens) % 7 == 0
         tokens = tokens[:len(tokens)//7*7]
         t = torch.tensor(tokens).reshape((-1,7))
