@@ -1,0 +1,27 @@
+{
+	"attn_window_size": null,
+	"codebook_dim": 8,
+	"codebook_size": 4096,
+	"decoder_dim": 1024,
+	"decoder_rates": [
+		8,
+		8,
+		4,
+		2
+	],
+	"depthwise": true,
+	"encoder_dim": 48,
+	"encoder_rates": [
+		2,
+		4,
+		8,
+		8
+	],
+	"noise": true,
+	"sampling_rate": 24000,
+	"vq_strides": [
+		4,
+		2,
+		1
+	]
+}
