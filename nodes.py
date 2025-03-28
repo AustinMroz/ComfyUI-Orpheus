@@ -156,8 +156,7 @@ class LoadOrpheus:
         conf = os.path.join(os.path.split(__file__)[0], 'orpheus-config.json')
         config = PretrainedConfig.from_json_file(conf)
         sd = safetensors.torch.load_file(model)
-        model = LlamaForCausalLM.from_pretrained(None, config=config, state_dict=sd, dtype=torch.float16)
-        print(model.dtype)
+        model = LlamaForCausalLM.from_pretrained(None, config=config, state_dict=sd, torch_dtype=torch.float16)
         return model,
 
 class OrpheusSample:
@@ -167,12 +166,15 @@ class OrpheusSample:
                              "prompt": ("ORPH_TOKENS",),
                              "add_start_token": ("BOOLEAN", {"default": True})},}
     FUNCTION = "sample"
-    RETURN_TYPES = ("ORPH_TOKENS","ORPH_TOKENS")
+    RETURN_TYPES = ("ORPH_TOKENS","ORPH_TOKENS", "ORPH_TOKENS")
+    RETURN_NAMES = ("full", "chunk", "generated")
     CATEOGRY = "Orpheus"
-    OUTPUT_NODE = True
     def sample(self, model, prompt, add_start_token):
         if add_start_token:
             prompt += [TOKENS['start_of_ai'], TOKENS['start_of_speech']]
+            chunk_index = len(prompt)
+        else:
+            chunk_index = len(prompt) - prompt[::-1].index(TOKENS['start_of_speech'])
         try:
             model.to(execution_device)
             input_ids = torch.tensor(prompt).unsqueeze(0).to(execution_device)
@@ -192,7 +194,10 @@ class OrpheusSample:
         finally:
             model.to('cpu')
         gen_ids = gen_ids.squeeze(0)
-        return gen_ids[...,start_index:-1].tolist(), gen_ids.tolist() + [TOKENS['end_of_ai']]
+        #TODO: Pass tensors so this is view
+        return ( gen_ids.tolist() + [TOKENS['end_of_ai']],
+                gen_ids[...,chunk_index:-1].tolist(),
+                gen_ids[...,start_index:-1].tolist())
 
 class OrpheusPrompt:
     @classmethod
