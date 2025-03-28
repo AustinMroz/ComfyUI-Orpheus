@@ -152,12 +152,12 @@ class LoadOrpheus:
     CATEOGRY = "Orpheus"
 
     def loadorpheus(self, model):
-        #model_path = folder_paths.get_full_path_or_raise('vae', model)
-        model_path = model
         #TODO: Save conf in safetensors?
         conf = os.path.join(os.path.split(__file__)[0], 'orpheus-config.json')
-        model = LlamaForCausalLM(PretrainedConfig.from_json_file(conf))
-        safetensors.torch.load_model(model, model_path)
+        config = PretrainedConfig.from_json_file(conf)
+        sd = safetensors.torch.load_file(model)
+        model = LlamaForCausalLM.from_pretrained(None, config=config, state_dict=sd, dtype=torch.float16)
+        print(model.dtype)
         return model,
 
 class OrpheusSample:
