@@ -37,6 +37,11 @@ app.registerExtension({
                     }
                 })
             })
+        } else if (nodeData?.name == "ORPH_Sample") {
+            chainCallback(nodeType.prototype, "onNodeCreated", function () {
+                let w = this.addWidget("button", "reroll", "seed", () => w.value++)
+                w.value = 0
+            })
         }
     },
 })

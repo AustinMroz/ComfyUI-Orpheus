@@ -156,7 +156,7 @@ class LoadOrpheus:
         conf = os.path.join(os.path.split(__file__)[0], 'orpheus-config.json')
         config = PretrainedConfig.from_json_file(conf)
         sd = safetensors.torch.load_file(model)
-        model = LlamaForCausalLM.from_pretrained(None, config=config, state_dict=sd, torch_dtype=torch.float16)
+        model = LlamaForCausalLM.from_pretrained(None, config=config, state_dict=sd)
         return model,
 
 class OrpheusSample:
@@ -164,12 +164,16 @@ class OrpheusSample:
     def INPUT_TYPES(s):
         return {"required": {"model": ("ORPH_MODEL",),
                              "prompt": ("ORPH_TOKENS",),
-                             "add_start_token": ("BOOLEAN", {"default": True})},}
+                             "add_start_token": ("BOOLEAN", {"default": True}),
+                             },
+                "hidden": {"seed": "seed"}}
     FUNCTION = "sample"
     RETURN_TYPES = ("ORPH_TOKENS","ORPH_TOKENS", "ORPH_TOKENS")
     RETURN_NAMES = ("full", "chunk", "generated")
     CATEOGRY = "Orpheus"
-    def sample(self, model, prompt, add_start_token):
+    def sample(self, model, prompt, add_start_token, seed=None):
+        #Seed is not something reproducible. Just a "reroll" counter
+        #TODO: Figure out seed. Likely requires migrating away from transformers
         if add_start_token:
             prompt += [TOKENS['start_of_ai'], TOKENS['start_of_speech']]
             chunk_index = len(prompt)
