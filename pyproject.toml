@@ -1,0 +1,16 @@
+[project]
+name = "comfyui-orpheus"
+description = "Nodes for using Orpheus-TTS in ComfyUI"
+version = "0.1.0"
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
+]
+
+[project.urls]
+Repository = "https://github.com/AustinMroz/ComfyUI-Orpheus"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = "austinmroz"
+DisplayName = "ComfyUI-Orpheus"
+Icon = ""
