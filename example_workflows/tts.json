@@ -34,7 +34,7 @@
         "Node name for S&R": "ORPH_Load"
       },
       "widgets_values": [
-        "models/orpheus-f16-model.safetensors"
+        "orpheus-ft.safetensors"
       ]
     },
     {
@@ -66,7 +66,8 @@
         "Node name for S&R": "ORPH_Prompt"
       },
       "widgets_values": [
-        "I speak to you for the first time as Prime Minister. When life gives you lemons? Don't make lemonade! GET MAD!"
+        "This is a test. Hello world!",
+        "tara"
       ]
     },
     {

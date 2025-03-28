@@ -277,7 +277,7 @@
         "Node name for S&R": "ORPH_Load"
       },
       "widgets_values": [
-        "models/orpheus-f16-model.safetensors"
+        "orpheus-pt.safetensors"
       ]
     },
     {

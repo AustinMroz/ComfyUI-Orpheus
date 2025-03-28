@@ -12,6 +12,10 @@ from comfy.text_encoders.hunyuan_video import LLAMA3Tokenizer
 import folder_paths
 from comfy.model_management import get_torch_device
 
+if not "orpheus" in folder_paths.folder_names_and_paths:
+    folder_paths.add_model_folder_path("orpheus", os.path.join(folder_paths.models_dir, "orpheus"))
+
+
 execution_device = get_torch_device()
 tokeniser_length = 128256
 TOKENS = {'start_of_text':  128000, 'end_of_text': 128009, 'start_of_speech':
@@ -140,17 +144,17 @@ class AudioLogitsProcessor(logits_process.LogitsProcessor):
 class LoadOrpheus:
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": {"model": ("STRING",)},}
-        return {"required": {"model": (folder_paths.get_filename_list('checkpoint'),)},}
+        return {"required": {"model": (folder_paths.get_filename_list('orpheus'),)},}
     FUNCTION = "loadorpheus"
     RETURN_TYPES = ("ORPH_MODEL",)
     CATEOGRY = "Orpheus"
 
     def loadorpheus(self, model):
+        model_path = folder_paths.get_full_path_or_raise('orpheus', model)
         #TODO: Save conf in safetensors?
         conf = os.path.join(os.path.split(__file__)[0], 'orpheus-config.json')
         config = PretrainedConfig.from_json_file(conf)
-        sd = safetensors.torch.load_file(model)
+        sd = safetensors.torch.load_file(model_path)
         #TODO: use this to detect pt/ft and add further tweaks?
         config.vocab_size = sd['lm_head.weight'].size(0)
         model = LlamaForCausalLM.from_pretrained(None, config=config, state_dict=sd)
