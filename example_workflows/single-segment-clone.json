@@ -1,0 +1,438 @@
+{
+  "id": "c2fc180d-76cd-487f-bad4-d8facc432a52",
+  "revision": 0,
+  "last_node_id": 34,
+  "last_link_id": 55,
+  "nodes": [
+    {
+      "id": 23,
+      "type": "ORPH_Combine",
+      "pos": [
+        561.1536865234375,
+        42.3155517578125
+      ],
+      "size": [
+        254.40000915527344,
+        106
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "prompt_1",
+          "type": "ORPH_TOKENS",
+          "link": 25
+        },
+        {
+          "name": "prompt_2",
+          "type": "ORPH_TOKENS",
+          "link": 32
+        },
+        {
+          "name": "prompt_3",
+          "type": "ORPH_TOKENS",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "ORPH_TOKENS",
+          "type": "ORPH_TOKENS",
+          "links": [
+            34,
+            35,
+            36,
+            38,
+            39
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ORPH_Combine"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 17,
+      "type": "ORPH_SnacVae",
+      "pos": [
+        67.89987182617188,
+        431.3000183105469
+      ],
+      "size": [
+        294,
+        58
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            14,
+            16,
+            18,
+            30
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ORPH_SnacVae"
+      },
+      "widgets_values": [
+        "snac-24khz.safetensors"
+      ]
+    },
+    {
+      "id": 11,
+      "type": "ORPH_Sample",
+      "pos": [
+        829.9647827148438,
+        52.56787109375
+      ],
+      "size": [
+        210,
+        98
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "ORPH_MODEL",
+          "link": 46
+        },
+        {
+          "name": "prompt",
+          "type": "ORPH_TOKENS",
+          "link": 39
+        }
+      ],
+      "outputs": [
+        {
+          "name": "full",
+          "type": "ORPH_TOKENS",
+          "links": [
+            13
+          ]
+        },
+        {
+          "name": "chunk",
+          "type": "ORPH_TOKENS",
+          "links": [
+            54
+          ]
+        },
+        {
+          "name": "generated",
+          "type": "ORPH_TOKENS",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ORPH_Sample"
+      },
+      "widgets_values": [
+        false
+      ]
+    },
+    {
+      "id": 13,
+      "type": "ORPH_Prompt",
+      "pos": [
+        18.922607421875,
+        173.1322021484375
+      ],
+      "size": [
+        280,
+        190
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "ORPH_TOKENS",
+          "type": "ORPH_TOKENS",
+          "links": [
+            11,
+            25
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ORPH_Prompt"
+      },
+      "widgets_values": [
+        "I speak to you for the first time as Prime Minister. When life gives you lemons? Don't make lemonade! GET MAD!"
+      ]
+    },
+    {
+      "id": 27,
+      "type": "ORPH_Encode",
+      "pos": [
+        333.53594970703125,
+        44.312255859375
+      ],
+      "size": [
+        210,
+        78
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 30
+        },
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 55
+        }
+      ],
+      "outputs": [
+        {
+          "name": "ORPH_TOKENS",
+          "type": "ORPH_TOKENS",
+          "links": [
+            32
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ORPH_Encode"
+      },
+      "widgets_values": [
+        "PRE"
+      ]
+    },
+    {
+      "id": 30,
+      "type": "VHS_LoadAudio",
+      "pos": [
+        16.10076904296875,
+        44.89947509765625
+      ],
+      "size": [
+        301.4382019042969,
+        82
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "links": [
+            55
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VHS_LoadAudio"
+      },
+      "widgets_values": {
+        "audio_file": "input/PrimeMinister.wav",
+        "seek_seconds": 0
+      }
+    },
+    {
+      "id": 12,
+      "type": "ORPH_Load",
+      "pos": [
+        514.64697265625,
+        359.12457275390625
+      ],
+      "size": [
+        297,
+        58
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "ORPH_MODEL",
+          "type": "ORPH_MODEL",
+          "links": [
+            17,
+            45,
+            46
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ORPH_Load"
+      },
+      "widgets_values": [
+        "models/orpheus-f16-model.safetensors"
+      ]
+    },
+    {
+      "id": 16,
+      "type": "ORPH_Decode",
+      "pos": [
+        1071,
+        54
+      ],
+      "size": [
+        140,
+        46
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "tokens",
+          "type": "ORPH_TOKENS",
+          "link": 54
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 18
+        }
+      ],
+      "outputs": [
+        {
+          "name": "AUDIO",
+          "type": "AUDIO",
+          "links": [
+            15,
+            42,
+            50
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ORPH_Decode"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 34,
+      "type": "PreviewAudio",
+      "pos": [
+        1240,
+        53
+      ],
+      "size": [
+        307,
+        88
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 50
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewAudio"
+      },
+      "widgets_values": [
+        ""
+      ]
+    }
+  ],
+  "links": [
+    [
+      18,
+      17,
+      0,
+      16,
+      1,
+      "VAE"
+    ],
+    [
+      25,
+      13,
+      0,
+      23,
+      0,
+      "ORPH_TOKENS"
+    ],
+    [
+      30,
+      17,
+      0,
+      27,
+      0,
+      "VAE"
+    ],
+    [
+      32,
+      27,
+      0,
+      23,
+      1,
+      "ORPH_TOKENS"
+    ],
+    [
+      39,
+      23,
+      0,
+      11,
+      1,
+      "ORPH_TOKENS"
+    ],
+    [
+      46,
+      12,
+      0,
+      11,
+      0,
+      "ORPH_MODEL"
+    ],
+    [
+      50,
+      16,
+      0,
+      34,
+      0,
+      "AUDIO"
+    ],
+    [
+      54,
+      11,
+      1,
+      16,
+      0,
+      "ORPH_TOKENS"
+    ],
+    [
+      55,
+      30,
+      0,
+      27,
+      1,
+      "AUDIO"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "VHS_latentpreview": true,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": false,
+    "VHS_KeepIntermediate": false
+  },
+  "version": 0.4
+}
